@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+  xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:app="http://schemas.android.com/apk/res-auto"
+  xmlns:tools="http://schemas.android.com/tools"
+  android:layout_width="match_parent"
+  android:layout_height="match_parent"
+  android:background="@color/colorWhite"
+  tools:context=".Activities.HomeActivity">
+
+  <TextView
+    android:textStyle="bold"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="10dp"
+    android:text="@string/app_name"
+    android:textColor="@color/colorGold"
+    android:textSize="22sp"/>
+
+  <LinearLayout
+    android:id="@+id/floating_layout"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_margin="6dp"
+    android:layout_alignParentEnd="true"
+    android:padding="2dp"
+    android:background="@drawable/coin_bg"
+    android:elevation="4dp"
+    android:orientation="horizontal">
+    <ImageView
+      android:id="@+id/coin_image"
+      android:layout_width="30dp"
+      android:layout_height="30dp"
+      android:layout_gravity="center_vertical"
+      android:padding="4dp"
+      android:src="@drawable/cent_50"
+      android:tint="@color/colorGold"/>
+    <TextView
+      android:id="@+id/coin_amount"
+      android:textStyle="bold"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_gravity="center"
+      android:padding="3dp"
+      android:gravity="center"
+      android:textColor="@color/colorWhite"
+      android:textSize="14sp"/>
+  </LinearLayout>
+
+  <FrameLayout
+    android:id="@+id/container"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:layout_above="@id/bnve"
+    android:layout_below="@id/floating_layout"/>
+
+  <com.ittianyu.bottomnavigationviewex.BottomNavigationViewEx
+    android:id="@+id/bnve"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_alignParentBottom="true"
+    android:layout_gravity="bottom"
+    app:itemHorizontalTranslationEnabled="true"
+    app:itemIconSize="34dp"
+    android:background="@color/colorWhite"
+    app:labelVisibilityMode="unlabeled"
+    app:menu="@menu/bottombar_menu"/>
+
+</RelativeLayout>

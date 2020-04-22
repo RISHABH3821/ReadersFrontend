@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:app="http://schemas.android.com/apk/res-auto">
+  <item
+    android:id="@+id/bottombaritem_home"
+    android:icon="@drawable/elective_150"
+    android:title="Home"
+    app:showAsAction="never"/>
+
+
+  <item
+    android:id="@+id/bottombaritem_exchange"
+    android:icon="@drawable/exchange_150"
+    android:title="Exchange"
+    app:showAsAction="never"/>
+
+
+  <item
+    android:id="@+id/bottombaritem_profile"
+    android:icon="@drawable/person_96"
+    android:title="Profile"
+    app:showAsAction="never"/>
+
+</menu>
