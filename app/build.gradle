@@ -1,5 +1,5 @@
 apply plugin: 'com.android.application'
-
+apply plugin: 'com.amazonaws.appsync'
 android {
     compileSdkVersion 28
     defaultConfig {
@@ -41,4 +41,7 @@ dependencies {
     implementation 'com.amazonaws:aws-android-sdk-s3:2.15.2'
     implementation('com.amazonaws:aws-android-sdk-auth-ui:2.9.0') { transitive = true }
     implementation 'org.jetbrains:annotations-java5:15.0'
+    implementation 'com.amazonaws:aws-android-sdk-appsync:2.8.3'
+    implementation 'org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.2.0'
+    implementation 'org.eclipse.paho:org.eclipse.paho.android.service:1.1.1'
 }

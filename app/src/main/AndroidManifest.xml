@@ -42,7 +42,7 @@
     <!-- android:resource="@xml/gradient_Login" /> -->
     <activity android:name=".Activities.LoginActivity"/>
     <service android:name="com.amazonaws.mobileconnectors.s3.transferutility.TransferService" android:enabled="true" />
-
+    <service android:name="org.eclipse.paho.android.service.MqttService" />
   </application>
 
 </manifest>
