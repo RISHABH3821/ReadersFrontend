@@ -10,13 +10,21 @@ package com.rishabh.readersjunction.Activities;
 import static com.rishabh.readersjunction.Activities.SplashScreen.api;
 import static com.rishabh.readersjunction.Activities.LoginActivity.USER_NAME;
 import android.Manifest.permission;
+import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.content.ContentUris;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.preference.PreferenceManager;
+import android.provider.DocumentsContract;
+import android.provider.MediaStore;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -31,15 +39,20 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.Toast;
+import com.amazonaws.mobile.client.AWSMobileClient;
+import com.amazonaws.services.s3.AmazonS3Client;
 import com.bumptech.glide.Glide;
 import com.rishabh.readersjunction.R;
 import com.rishabh.readersjunction.Services.InternetService;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
+import java.net.URISyntaxException;
 import org.jetbrains.annotations.NotNull;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
+import com.amazonaws.mobileconnectors.s3.transferutility.*;
 
 public class UploadBookActivity extends AppCompatActivity {
 
@@ -61,6 +74,7 @@ public class UploadBookActivity extends AppCompatActivity {
     setContentView(R.layout.activity_upload_book);
     user_name = PreferenceManager
         .getDefaultSharedPreferences(this).getString(USER_NAME, "null");
+    AWSMobileClient.getInstance().initialize(this).execute();
     frameLayout = findViewById(R.id.frame);
     bookCover = findViewById(R.id.imageView_upload);
     addImageLayout = findViewById(R.id.add_image_layout);
@@ -111,7 +125,7 @@ public class UploadBookActivity extends AppCompatActivity {
     Intent intent = new Intent();
     intent.setType("image/*");
     intent.setAction(Intent.ACTION_GET_CONTENT);
-//    startActivityForResult(Intent.createChooser(intent, "Select Picture"), PICK_IMAGE);
+    startActivityForResult(Intent.createChooser(intent, "Select Picture"), PICK_IMAGE);
   }
 
 
@@ -124,6 +138,11 @@ public class UploadBookActivity extends AppCompatActivity {
           Bitmap bmp = BitmapFactory.decodeStream(inputStream);
           Glide.with(this).load(bmp).into(bookCover);
           addImageLayout.setVisibility(View.GONE);
+          try {
+            uploadBookCover(getPath(data.getData()));
+          } catch (URISyntaxException e) {
+            e.printStackTrace();
+          }
         } catch (FileNotFoundException e) {
           e.printStackTrace();
         }
@@ -144,6 +163,58 @@ public class UploadBookActivity extends AppCompatActivity {
         Toast.makeText(this, "permission Denied", Toast.LENGTH_SHORT).show();
       }
     }
+  }
+
+
+  private void uploadBookCover(String path){
+    TransferUtility transferUtility =
+        TransferUtility.builder()
+            .context(getApplicationContext())
+            .awsConfiguration(AWSMobileClient.getInstance().getConfiguration())
+            .s3Client(new AmazonS3Client(AWSMobileClient.getInstance().getCredentialsProvider()))
+            .build();
+
+    TransferObserver uploadObserver =
+        transferUtility.upload(
+            "s3Folder/s3Key.png",
+            new File(path));
+
+    // Attach a listener to the observer to get state update and progress notifications
+    uploadObserver.setTransferListener(new TransferListener() {
+
+      @Override
+      public void onStateChanged(int id, TransferState state) {
+        if (TransferState.COMPLETED == state) {
+          // Handle a completed upload.
+          Toast.makeText(UploadBookActivity.this, "Uploaded", Toast.LENGTH_SHORT).show();
+        }
+      }
+
+      @Override
+      public void onProgressChanged(int id, long bytesCurrent, long bytesTotal) {
+        float percentDonef = ((float) bytesCurrent / (float) bytesTotal) * 100;
+        int percentDone = (int)percentDonef;
+        etBookName.setText("Percent: "+percentDone);
+        Log.d("YourActivity", "ID:" + id + " bytesCurrent: " + bytesCurrent
+            + " bytesTotal: " + bytesTotal + " " + percentDone + "%");
+      }
+
+      @Override
+      public void onError(int id, Exception ex) {
+        // Handle errors
+        Log.d("ImageUpload", ex.getMessage());
+      }
+
+    });
+
+    // If you prefer to poll for the data, instead of attaching a
+    // listener, check for the state and progress in the observer.
+    if (TransferState.COMPLETED == uploadObserver.getState()) {
+      // Handle a completed upload.
+    }
+
+    Log.d("YourActivity", "Bytes Transferrred: " + uploadObserver.getBytesTransferred());
+    Log.d("YourActivity", "Bytes Total: " + uploadObserver.getBytesTotal());
   }
 
 
@@ -212,5 +283,74 @@ public class UploadBookActivity extends AppCompatActivity {
     super.onBackPressed();
   }
 
+
+
+  @SuppressLint("NewApi")
+  private String getPath(Uri uri) throws URISyntaxException {
+    final boolean needToCheckUri = Build.VERSION.SDK_INT >= 19;
+    String selection = null;
+    String[] selectionArgs = null;
+    // Uri is different in versions after KITKAT (Android 4.4), we need to
+    // deal with different Uris.
+    if (needToCheckUri && DocumentsContract.isDocumentUri(getApplicationContext(), uri)) {
+      if (isExternalStorageDocument(uri)) {
+        final String docId = DocumentsContract.getDocumentId(uri);
+        final String[] split = docId.split(":");
+        return Environment.getExternalStorageDirectory() + "/" + split[1];
+      } else if (isDownloadsDocument(uri)) {
+        final String id = DocumentsContract.getDocumentId(uri);
+        uri = ContentUris.withAppendedId(
+            Uri.parse("content://downloads/public_downloads"), Long.valueOf(id));
+      } else if (isMediaDocument(uri)) {
+        final String docId = DocumentsContract.getDocumentId(uri);
+        final String[] split = docId.split(":");
+        final String type = split[0];
+        if ("image".equals(type)) {
+          uri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
+        } else if ("video".equals(type)) {
+          uri = MediaStore.Video.Media.EXTERNAL_CONTENT_URI;
+        } else if ("audio".equals(type)) {
+          uri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
+        }
+        selection = "_id=?";
+        selectionArgs = new String[]{
+            split[1]
+        };
+      }
+    }
+    if ("content".equalsIgnoreCase(uri.getScheme())) {
+      String[] projection = {
+          MediaStore.Images.Media.DATA
+      };
+      Cursor cursor = null;
+      try {
+        cursor = getContentResolver()
+            .query(uri, projection, selection, selectionArgs, null);
+        int column_index = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
+        if (cursor.moveToFirst()) {
+          return cursor.getString(column_index);
+        }
+      } catch (Exception e) {
+      }
+    } else if ("file".equalsIgnoreCase(uri.getScheme())) {
+      return uri.getPath();
+    }
+    return null;
+  }
+
+
+  public static boolean isExternalStorageDocument(Uri uri) {
+    return "com.android.externalstorage.documents".equals(uri.getAuthority());
+  }
+
+
+  public static boolean isDownloadsDocument(Uri uri) {
+    return "com.android.providers.downloads.documents".equals(uri.getAuthority());
+  }
+
+
+  public static boolean isMediaDocument(Uri uri) {
+    return "com.android.providers.media.documents".equals(uri.getAuthority());
+  }
 
 }

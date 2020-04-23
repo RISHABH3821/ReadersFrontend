@@ -112,4 +112,11 @@ public interface API {
   @GET("/getUserId/")
   Call<String > getUserId(@Query("user_name") String user_name);
 
+
+  @GET("/getusername/")
+  Call<String > getUserName(@Query("user_email") String user_email);
+
+  @GET("/getuseremail/")
+  Call<String > getUserEmail(@Query("user_name") String user_name);
+
 }

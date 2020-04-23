@@ -79,6 +79,8 @@ public class ProfileFragment extends Fragment {
       public void onClick(View view) {
         PreferenceManager.getDefaultSharedPreferences(getContext()).edit()
             .putString(USER_NAME, null).apply();
+        PreferenceManager.getDefaultSharedPreferences(getContext()).edit()
+            .putBoolean("signed", false).apply();
         Intent in = new Intent(getContext(), LoginActivity.class);
         in.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         startActivity(in);

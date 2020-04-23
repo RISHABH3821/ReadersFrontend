@@ -11,6 +11,9 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.widget.ImageView;
 import android.widget.Toast;
+import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUser;
+import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUserPool;
+import com.amazonaws.regions.Regions;
 import com.bumptech.glide.Glide;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -31,11 +34,24 @@ public class SplashScreen extends AppCompatActivity {
 
   private static final String url = "http://ec2-18-223-190-95.us-east-2.compute.amazonaws.com:3000/"; //base url
   public static API api = null; //single api for whole app
+  public static CognitoUserPool userPool;
+  public static CognitoUser user;
+  String userPoolId = "us-east-2_4KvdcJ6vm";
+  String clientId = "15mnu0016oohtivin18938nhlo";
+  String clientSecret = "5jv3vqaaa650qdf9g3j861cpeik7p0rglchpb6vaitvpi67q02n";
+  Regions regions = Regions.US_EAST_2;
+  private String emailaddress;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_splash_screen);
+
+    //cognito
+    userPool = new CognitoUserPool(this, userPoolId, clientId, clientSecret, regions);
+    user = userPool.getCurrentUser();
+    emailaddress = user.getUserId();
+
 
     final Gson gson = new GsonBuilder()
         .setLenient()
@@ -58,14 +74,31 @@ public class SplashScreen extends AppCompatActivity {
     handler.postDelayed(new Runnable() {
       @Override
       public void run() {
-        String username = PreferenceManager.getDefaultSharedPreferences(SplashScreen.this)
-            .getString(USER_NAME, "null");
-        String user_pass = PreferenceManager.getDefaultSharedPreferences(SplashScreen.this)
-            .getString(USERPASSWORD, "null");
-        if (!username.equals("null")) {
-          login(username, user_pass);
+        boolean signed = PreferenceManager.getDefaultSharedPreferences(SplashScreen.this)
+            .getBoolean("signed", false);
+        if (signed) {
+          Call<String> call = api.getUserName(emailaddress);
+          call.enqueue(new Callback<String>() {
+            @Override
+            public void onResponse(Call<String> call, Response<String> response) {
+              if(response.isSuccessful()){
+                PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).edit().putString(USER_NAME, response.body()).apply();
+                startActivity(new Intent(SplashScreen.this, HomeActivity.class));
+              }else{
+                startActivity(new Intent(SplashScreen.this, LoginActivity.class));
+                SplashScreen.this.finish();
+              }
+            }
+
+            @Override
+            public void onFailure(Call<String> call, Throwable t) {
+              startActivity(new Intent(SplashScreen.this, LoginActivity.class));
+              SplashScreen.this.finish();
+            }
+          });
         } else {
           startActivity(new Intent(SplashScreen.this, LoginActivity.class));
+          SplashScreen.this.finish();
         }
       }
     }, 2000);

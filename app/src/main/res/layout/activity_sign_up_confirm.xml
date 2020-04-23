@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:app="http://schemas.android.com/apk/res-auto"
+  xmlns:tools="http://schemas.android.com/tools"
+  android:layout_width="match_parent"
+  android:layout_height="match_parent"
+  android:background="@color/white"
+  tools:context=".Activities.SignUpConfirmActivity">
+
+  <ImageView
+    android:id="@+id/logo"
+    android:src="@drawable/logo"
+    android:scaleType="fitXY"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"/>
+
+
+  <TextView
+    android:id="@+id/textViewConfirmTitle"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_below="@id/logo"
+    android:layout_marginTop="20dp"
+    android:layout_marginStart="21dp"
+    android:text="Confirm your account"
+    android:textAppearance="?android:attr/textAppearanceLarge"
+    android:textColor="@color/dark_cyan"
+    android:textSize="20sp"/>
+
+  <TextView
+    android:id="@+id/textViewConfirmSubtext_1"
+    android:layout_width="230dp"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="4dp"
+    android:layout_marginStart="21dp"
+    android:layout_below="@id/textViewConfirmTitle"
+    android:text="A confirmation code was sent.\nPlease enter the code below to confirm your account."
+    android:textColor="@color/cadet_blue"
+    android:textSize="15sp"/>
+
+  <RelativeLayout
+    android:layout_marginTop="10dp"
+    android:layout_below="@id/textViewConfirmSubtext_1"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content">
+
+    <EditText
+      android:id="@+id/editTextConfirmcode"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="10dp"
+      android:layout_marginStart="45.5dp"
+      android:layout_marginEnd="45.5dp"
+      android:layout_centerHorizontal="true"
+      android:textColor="@color/indian_red"
+      android:paddingLeft="10dp"
+      android:paddingRight="10dp"
+      android:hint="Confirmation code"
+      android:inputType="number"
+      android:textSize="15sp"/>
+
+    <TextView
+      android:id="@+id/textViewConfirmCodeMessage"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginStart="50dp"
+      android:layout_marginEnd="50dp"
+      android:layout_below="@id/editTextConfirmcode"
+      android:layout_centerHorizontal="true"
+      android:text=" "
+      android:textAppearance="?android:attr/textAppearanceSmall"
+      android:textColor="@android:color/holo_red_dark"
+      android:textSize="12sp"/>
+
+    <LinearLayout
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_below="@id/editTextConfirmcode"
+      android:layout_centerHorizontal="true"
+      android:orientation="vertical">
+
+      <Button
+        android:id="@+id/confirm_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="31.5dp"
+        android:text="Confirm"
+        android:textStyle="bold"
+        android:background="@drawable/upload_button_bg"
+        android:textAllCaps="false"
+        android:textColor="#FFFFFF"
+        android:textSize="15sp"/>
+
+      <TextView
+        android:id="@+id/resend_confirm_req"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:layout_gravity="end"
+        android:text="Resend code"
+        android:textColor="@color/dark_gray"
+        android:textAllCaps="false"
+        android:textAppearance="?android:attr/textAppearanceSmall"
+        android:textSize="15sp"/>
+    </LinearLayout>
+  </RelativeLayout>
+
+</RelativeLayout>

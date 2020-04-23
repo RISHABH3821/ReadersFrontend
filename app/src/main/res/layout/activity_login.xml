@@ -41,7 +41,7 @@
       android:layout_marginRight="8dp"
       android:drawableStart="@drawable/ic_person_black_24dp"
       android:ems="10"
-      android:hint="Username"
+      android:hint="Username or Email"
       android:inputType="textPersonName"
       android:selectAllOnFocus="false"
       android:singleLine="false"

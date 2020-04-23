@@ -3,6 +3,8 @@ package com.rishabh.readersjunction.Activities;
 import static com.rishabh.readersjunction.Activities.LoginActivity.USER_NAME;
 import static com.rishabh.readersjunction.Activities.LoginActivity.USERPASSWORD;
 import static com.rishabh.readersjunction.Activities.SplashScreen.api;
+import static com.rishabh.readersjunction.Activities.SplashScreen.user;
+import static com.rishabh.readersjunction.Activities.SplashScreen.userPool;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -14,6 +16,12 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
+import com.amazonaws.mobile.auth.userpools.SignUpActivity;
+import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUser;
+import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUserAttributes;
+import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUserCodeDeliveryDetails;
+import com.amazonaws.mobileconnectors.cognitoidentityprovider.handlers.GenericHandler;
+import com.amazonaws.mobileconnectors.cognitoidentityprovider.handlers.SignUpHandler;
 import com.rishabh.readersjunction.R;
 import com.rishabh.readersjunction.Services.InternetService;
 import java.util.regex.Pattern;
@@ -39,70 +47,60 @@ public class RegisterActivity extends AppCompatActivity {
   private EditText name, uname, pass, email, mob, add;
   private Button regbtn;
 
+  SignUpHandler signUpHandler = new SignUpHandler() {
+    @Override
+    public void onSuccess(CognitoUser user, boolean signUpConfirmationState,
+        CognitoUserCodeDeliveryDetails cognitoUserCodeDeliveryDetails) {
+      if (signUpConfirmationState) {
+        // User is already confirmed
+        //showDialogMessage("Sign up successful!",usernameInput+" has been Confirmed", true);
+      } else {
+        // User is not confirmed
+        confirmSignUp(cognitoUserCodeDeliveryDetails);
+      }
+    }
+
+    @Override
+    public void onFailure(Exception exception) {
+      Toast.makeText(RegisterActivity.this, "failed: "+exception.getMessage(), Toast.LENGTH_SHORT).show();
+      Log.d("exception", "onFailure: " + exception);
+    }
+  };
+
+
+  String full_name;
+  String user_name;
+  String user_pass;
+  String user_email;
+  String user_mob;
+  String user_add;
+
+
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_register);
     getUserLoginDetails();
 
-
     //  register on click listener and pass parameters to register function
     regbtn.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View view) {
         if (confirmInput()) {
-          String full_name = name.getText().toString();
-          String user_name = uname.getText().toString();
-          String user_pass = pass.getText().toString();
-          String user_email = email.getText().toString();
-          String user_mob = mob.getText().toString();
-          String user_add = add.getText().toString();
-          register(full_name, user_name, user_pass, user_email, user_mob, user_add);
+          full_name = name.getText().toString();
+          user_name = uname.getText().toString();
+          user_pass = pass.getText().toString();
+          user_email = email.getText().toString();
+          user_mob = mob.getText().toString();
+          user_add = add.getText().toString();
+          CognitoUserAttributes userAttributes = new CognitoUserAttributes();
+          userAttributes.addAttribute("email", user_email);
+          SplashScreen.userPool
+              .signUpInBackground(user_email, user_pass, userAttributes, null, signUpHandler);
         }
       }
     });
   }
-
-
-  private void register(String full_name, final String user_name, final String user_pass,
-      String user_email,
-      String user_mob, String user_add) {
-    Call<String> call = api
-        .performRegisteration(user_name, full_name, user_pass, user_email, user_mob, user_add);
-    call.enqueue(new Callback<String>() {
-      @Override
-      public void onResponse(Call<String> call, Response<String> response) {
-        if (response.isSuccessful()) {
-          PreferenceManager.getDefaultSharedPreferences(RegisterActivity.this).edit()
-              .putString(USER_NAME, user_name).apply();
-          PreferenceManager.getDefaultSharedPreferences(RegisterActivity.this).edit()
-              .putString(USERPASSWORD, user_pass).apply();
-          startActivity(new Intent(RegisterActivity.this, HomeActivity.class));
-          RegisterActivity.this.finish();
-        } else {
-          Toast.makeText(RegisterActivity.this, response.body(), Toast.LENGTH_SHORT).show();
-        }
-      }
-
-      @Override
-      public void onFailure(Call<String> call, Throwable t) {
-        if (!new InternetService(RegisterActivity.this).haveNetworkConnection()) {
-          showError("Not Connected to Internet");
-        } else {
-          showError("Something went wrong, Please Try again later.");
-          Log.d("Error", t.toString());
-        }
-      }
-    });
-
-
-  }
-
-// // toast if error occur like user id not match
-  private void showError(String msg) {
-    Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
-  }
-
 
 
   // function which check all the parameters of input type
@@ -197,7 +195,7 @@ public class RegisterActivity extends AppCompatActivity {
   }
 
 
-//validation for address can't be NULL
+  //validation for address can't be NULL
   private boolean validateAddress() {
     String addressInput = add.getText().toString().trim();
 
@@ -221,4 +219,50 @@ public class RegisterActivity extends AppCompatActivity {
     mob = findViewById(R.id.mob);
     add = findViewById(R.id.address);
   }
+
+
+  private void confirmSignUp(CognitoUserCodeDeliveryDetails cognitoUserCodeDeliveryDetails) {
+    Intent intent = new Intent(this, SignUpConfirmActivity.class);
+    intent.putExtra("source", "signup");
+    intent.putExtra("full_name", full_name);
+    intent.putExtra("user_name", user_name);
+    intent.putExtra("user_email", user_email);
+    intent.putExtra("user_mob", user_mob);
+    intent.putExtra("user_add", user_add);
+    intent.putExtra("destination", cognitoUserCodeDeliveryDetails.getDestination());
+    intent.putExtra("deliveryMed", cognitoUserCodeDeliveryDetails.getDeliveryMedium());
+    intent.putExtra("attribute", cognitoUserCodeDeliveryDetails.getAttributeName());
+    startActivityForResult(intent, 10);
+  }
+
+
+  public void onActivityResult(int requestCode, int resultCode, Intent data) {
+    super.onActivityResult(requestCode, resultCode, data);
+    if (requestCode == 10) {
+      if (resultCode == RESULT_OK) {
+        String name = null;
+        if (data.hasExtra("name")) {
+          name = data.getStringExtra("name");
+        }
+        exit(name, user_pass);
+      }
+    }
+  }
+
+
+  private void exit(String uname, String password) {
+    Intent intent = new Intent();
+    if (uname == null) {
+      uname = "";
+    }
+    if (password == null) {
+      password = "";
+    }
+    intent.putExtra("name", uname);
+    intent.putExtra("password", password);
+    setResult(RESULT_OK, intent);
+    finish();
+  }
+
+
 }

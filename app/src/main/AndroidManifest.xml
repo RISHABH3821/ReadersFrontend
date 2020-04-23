@@ -2,13 +2,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
   package="com.rishabh.readersjunction">
 
-  <uses-permission android:name="android.permission.INTERNET"/>
-  <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
-  <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
-  <uses-permission android:name="android.permission.CAMERA"/>
-
-  <uses-feature android:name="android.hardware.camera2"/>
-
   <application
     android:allowBackup="true"
     android:icon="@mipmap/ic_launcher"
@@ -17,32 +10,39 @@
     android:supportsRtl="true"
     android:theme="@style/FullScreen"
     android:usesCleartextTraffic="true">
+    <activity android:name=".Activities.SignUpConfirmActivity"></activity>
 
-    <uses-library
-      android:name="org.apache.http.legacy"
-      android:required="false" />
+    <activity android:name=".Activities.UploadBookActivity"></activity>
 
-    <activity android:name=".Activities.UploadBookActivity">
-
-    </activity>
-    <activity android:name=".Activities.HomeActivity">
-
-    </activity>
+    <activity android:name=".Activities.HomeActivity"></activity>
     <activity
       android:name=".Activities.SplashScreen"
       android:theme="@style/FullScreen">
       <intent-filter>
-        <action android:name="android.intent.action.MAIN"/>
+        <action android:name="android.intent.action.MAIN" />
 
-        <category android:name="android.intent.category.LAUNCHER"/>
+        <category android:name="android.intent.category.LAUNCHER" />
       </intent-filter>
     </activity>
-    <activity android:name=".Activities.RegisterActivity"/> <!-- <meta-data -->
+    <activity android:name=".Activities.RegisterActivity" />
+    <activity android:name=".Activities.LoginActivity" /> <!-- <meta-data -->
     <!-- android:name="com.google.android.actions" -->
     <!-- android:resource="@xml/gradient_Login" /> -->
-    <activity android:name=".Activities.LoginActivity"/>
-    <service android:name="com.amazonaws.mobileconnectors.s3.transferutility.TransferService" android:enabled="true" />
+    <service
+      android:enabled="true"
+      android:name="com.amazonaws.mobileconnectors.s3.transferutility.TransferService" />
+
     <service android:name="org.eclipse.paho.android.service.MqttService" />
+    <uses-library
+      android:name="org.apache.http.legacy"
+      android:required="false" />
   </application>
+  <uses-feature android:name="android.hardware.camera2" />
+  <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+  <uses-permission android:name="android.permission.CAMERA" />
+
+  <uses-permission android:name="android.permission.INTERNET" />
+
+  <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 
 </manifest>

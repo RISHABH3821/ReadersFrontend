@@ -215,8 +215,6 @@ public class BookCatalagFragment extends Fragment {
           @NotNull Response<String> response) {
         if (response.isSuccessful()) {
           if (response.body() != null) {
-            Toast.makeText(context, "User rating received" + response.body(), Toast.LENGTH_SHORT)
-                .show();
             ratingBar.setRating(Float.parseFloat(response.body()));
           }
         }
@@ -227,7 +225,7 @@ public class BookCatalagFragment extends Fragment {
         if (!new InternetService(context).haveNetworkConnection()) {
           showMessage("Not Connected to Internet");
         } else {
-          showMessage("Something went wrong, Please Try again later.");
+//          showMessage("Something went wrong, Please Try again later.");
           Log.d("Error", t.toString());
         }
       }
