@@ -17,16 +17,19 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.RecyclerView.AdapterDataObserver;
 import android.support.v7.widget.RecyclerView.LayoutManager;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 import com.rishabh.readersjunction.Activities.LoginActivity;
+import com.rishabh.readersjunction.Activities.SplashScreen;
 import com.rishabh.readersjunction.Activities.UploadBookActivity;
 import com.rishabh.readersjunction.Adapter.UserBookListAdapter;
 import com.rishabh.readersjunction.DataModels.BookDataModel;
@@ -51,6 +54,7 @@ public class ProfileFragment extends Fragment {
   private ArrayList<BookDataModel> dataModels;
   private RecyclerView recyclerView;
   private String user_name;
+  private FrameLayout frameLayout;
 
   public ProfileFragment() {
     // Required empty public constructor
@@ -61,10 +65,11 @@ public class ProfileFragment extends Fragment {
       Bundle savedInstanceState) {
     // Inflate the layout for this fragment
     View view = inflater.inflate(R.layout.activity_profile, container, false);
+    frameLayout = view.findViewById(R.id.imageLayout);
     dataModels = new ArrayList<>();
     user_name = PreferenceManager
         .getDefaultSharedPreferences(getContext()).getString(USER_NAME, "null");
-    TextView userName = view.findViewById(R.id.user_name);
+    final TextView userName = view.findViewById(R.id.profile_data);
     userName.setText(user_name);
     uploadBookButton = view.findViewById(R.id.upload_book_button);
     uploadBookButton.setOnClickListener(new OnClickListener() {
@@ -81,6 +86,7 @@ public class ProfileFragment extends Fragment {
             .putString(USER_NAME, null).apply();
         PreferenceManager.getDefaultSharedPreferences(getContext()).edit()
             .putBoolean("signed", false).apply();
+        SplashScreen.user.signOut();
         Intent in = new Intent(getContext(), LoginActivity.class);
         in.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         startActivity(in);
@@ -88,11 +94,29 @@ public class ProfileFragment extends Fragment {
       }
     });
     recyclerView = view.findViewById(R.id.recyclerView);
-    recyclerView.setNestedScrollingEnabled(false);
+    recyclerView.setHasFixedSize(false);
+    recyclerView.setNestedScrollingEnabled(true);
     LayoutManager layoutManager = new LinearLayoutManager(getContext(),
         LinearLayoutManager.VERTICAL, false);
     recyclerView.setLayoutManager(layoutManager);
     getBooksFromUserName();
+    bookListAdapter = new UserBookListAdapter(dataModels, getContext());
+    recyclerView.setAdapter(bookListAdapter);
+    bookListAdapter.registerAdapterDataObserver(new AdapterDataObserver() {
+      @Override
+      public void onChanged() {
+        super.onChanged();
+        if(dataModels.isEmpty()){
+          frameLayout.setVisibility(View.VISIBLE);
+          userName.setText(user_name);
+        }else{
+          userName.setText(
+              new StringBuilder().append(user_name).append("\n").append(dataModels.size())
+                  .append(" books").toString());
+          frameLayout.setVisibility(View.GONE);
+        }
+      }
+    });
     return view;
   }
 
@@ -106,9 +130,8 @@ public class ProfileFragment extends Fragment {
         if (response.isSuccessful()) {
           if (response.body() != null) {
             dataModels.addAll(response.body());
+            bookListAdapter.notifyDataSetChanged();
           }
-          bookListAdapter = new UserBookListAdapter(dataModels, getContext());
-          recyclerView.setAdapter(bookListAdapter);
         } else {
           showError("Something Went Wrong");
         }

@@ -9,6 +9,7 @@ package com.rishabh.readersjunction.Activities;
 
 import static com.rishabh.readersjunction.Activities.SplashScreen.api;
 import static com.rishabh.readersjunction.Activities.LoginActivity.USER_NAME;
+
 import android.Manifest.permission;
 import android.annotation.SuppressLint;
 import android.app.Activity;
@@ -40,8 +41,10 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.Toast;
 import com.amazonaws.mobile.client.AWSMobileClient;
+import com.amazonaws.mobile.client.UserStateDetails;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.bumptech.glide.Glide;
+import com.rishabh.readersjunction.Fragments.CustomProgressDialog;
 import com.rishabh.readersjunction.R;
 import com.rishabh.readersjunction.Services.InternetService;
 import java.io.File;
@@ -57,16 +60,21 @@ import com.amazonaws.mobileconnectors.s3.transferutility.*;
 public class UploadBookActivity extends AppCompatActivity {
 
   private static final int PICK_IMAGE = 200;
+  private static final String TAG = "UPLOADBOOK";
   EditText etBookName, etBookAuthor, etBookDesc;
   AutoCompleteTextView etBookGenre;
   FrameLayout frameLayout;
   ImageView bookCover;
   LinearLayout addImageLayout;
   String base64String = null;
+  private Uri imageUri;
   private String user_name;
   //predefined genres for books
   private String[] genres = {"Biography", "Detective", "Dystopian", "Fantasy", "Horror",
       "Literature", "Romance", "Science Fiction", "Thriller"};
+  private String book_name, book_author, book_desc, book_genre;
+
+  private CustomProgressDialog customProgressDialog;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -75,6 +83,8 @@ public class UploadBookActivity extends AppCompatActivity {
     user_name = PreferenceManager
         .getDefaultSharedPreferences(this).getString(USER_NAME, "null");
     AWSMobileClient.getInstance().initialize(this).execute();
+    getApplicationContext()
+        .startService(new Intent(getApplicationContext(), TransferService.class));
     frameLayout = findViewById(R.id.frame);
     bookCover = findViewById(R.id.imageView_upload);
     addImageLayout = findViewById(R.id.add_image_layout);
@@ -97,14 +107,103 @@ public class UploadBookActivity extends AppCompatActivity {
       @Override
       public void onClick(View view) {
         if (isFormOk()) {
-          String book_name = etBookName.getText().toString();
-          String book_author = etBookAuthor.getText().toString();
-          String book_desc = etBookDesc.getText().toString();
-          String book_genre = etBookGenre.getText().toString();
-          initiateUpload(book_name, book_author, book_desc, book_genre);
+          customProgressDialog = new CustomProgressDialog();
+          customProgressDialog.getProgressChangeListener().progressChanged(0, "Uploading Image");
+          customProgressDialog.setCancelable(false);
+          book_name = etBookName.getText().toString();
+          book_author = etBookAuthor.getText().toString();
+          book_desc = etBookDesc.getText().toString();
+          book_genre = etBookGenre.getText().toString();
+          if (imageUri != null) {
+            try {
+              customProgressDialog.show(getSupportFragmentManager(), "dialog");
+              uploadWithTransferUtility(getPath(imageUri));
+            } catch (URISyntaxException e) {
+              Toast.makeText(UploadBookActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
+              e.printStackTrace();
+            }
+          } else {
+            customProgressDialog.getProgressChangeListener()
+                .progressChanged(100, "No Image,\n saving details");
+            customProgressDialog.show(getSupportFragmentManager(), "dialog");
+            initiateUpload(book_name, book_author, book_desc, book_genre, "none");
+          }
         }
       }
     });
+    // Initialize the AWSMobileClient if not initialized
+    AWSMobileClient.getInstance().initialize(getApplicationContext(),
+        new com.amazonaws.mobile.client.Callback<UserStateDetails>() {
+          @Override
+          public void onResult(UserStateDetails userStateDetails) {
+            Log.i(TAG,
+                "AWSMobileClient initialized. User State is " + userStateDetails.getUserState());
+          }
+
+          @Override
+          public void onError(Exception e) {
+            Log.e(TAG, "Initialization error.", e);
+          }
+        });
+  }
+
+
+  public void uploadWithTransferUtility(String path) {
+
+    TransferUtility transferUtility =
+        TransferUtility.builder()
+            .context(getApplicationContext())
+            .awsConfiguration(AWSMobileClient.getInstance().getConfiguration())
+            .s3Client(new AmazonS3Client(AWSMobileClient.getInstance()))
+            .build();
+
+    final String file_name = user_name + etBookName.getText().toString() + ".jpg";
+    TransferObserver uploadObserver =
+        transferUtility.upload(
+            "public/bookcover/" + file_name,
+            new File(path));
+
+    // Attach a listener to the observer to get state update and progress notifications
+    uploadObserver.setTransferListener(new TransferListener() {
+
+      @Override
+      public void onStateChanged(int id, TransferState state) {
+        if (TransferState.COMPLETED == state) {
+          // Handle a completed upload.
+          initiateUpload(book_name, book_author, book_desc, book_genre, file_name);
+          customProgressDialog.getProgressChangeListener()
+              .progressChanged(100, "Saving Details...");
+        }
+      }
+
+      @Override
+      public void onProgressChanged(int id, long bytesCurrent, long bytesTotal) {
+        float percentDonef = ((float) bytesCurrent / (float) bytesTotal) * 100;
+        int percentDone = (int) percentDonef;
+        customProgressDialog.getProgressChangeListener()
+            .progressChanged(percentDone, "Uploading Image");
+        Log.d(TAG, "ID:" + id + " bytesCurrent: " + bytesCurrent
+            + " bytesTotal: " + bytesTotal + " " + percentDone + "%");
+      }
+
+      @Override
+      public void onError(int id, Exception ex) {
+        // Handle errors
+        Toast.makeText(UploadBookActivity.this, "Image upload failed", Toast.LENGTH_SHORT).show();
+        Log.d(TAG, "imageUpload " + ex.getMessage());
+      }
+
+    });
+
+    // If you prefer to poll for the data, instead of attaching a
+    // listener, check for the state and progress in the observer.
+    if (TransferState.COMPLETED == uploadObserver.getState()) {
+      // Handle a completed upload.
+      Toast.makeText(UploadBookActivity.this, "Uploaded", Toast.LENGTH_SHORT).show();
+    }
+
+    Log.d(TAG, "Bytes Transferred: " + uploadObserver.getBytesTransferred());
+    Log.d(TAG, "Bytes Total: " + uploadObserver.getBytesTotal());
   }
 
 
@@ -137,12 +236,8 @@ public class UploadBookActivity extends AppCompatActivity {
           InputStream inputStream = getContentResolver().openInputStream(data.getData());
           Bitmap bmp = BitmapFactory.decodeStream(inputStream);
           Glide.with(this).load(bmp).into(bookCover);
+          imageUri = data.getData();
           addImageLayout.setVisibility(View.GONE);
-          try {
-            uploadBookCover(getPath(data.getData()));
-          } catch (URISyntaxException e) {
-            e.printStackTrace();
-          }
         } catch (FileNotFoundException e) {
           e.printStackTrace();
         }
@@ -166,64 +261,11 @@ public class UploadBookActivity extends AppCompatActivity {
   }
 
 
-  private void uploadBookCover(String path){
-    TransferUtility transferUtility =
-        TransferUtility.builder()
-            .context(getApplicationContext())
-            .awsConfiguration(AWSMobileClient.getInstance().getConfiguration())
-            .s3Client(new AmazonS3Client(AWSMobileClient.getInstance().getCredentialsProvider()))
-            .build();
-
-    TransferObserver uploadObserver =
-        transferUtility.upload(
-            "s3Folder/s3Key.png",
-            new File(path));
-
-    // Attach a listener to the observer to get state update and progress notifications
-    uploadObserver.setTransferListener(new TransferListener() {
-
-      @Override
-      public void onStateChanged(int id, TransferState state) {
-        if (TransferState.COMPLETED == state) {
-          // Handle a completed upload.
-          Toast.makeText(UploadBookActivity.this, "Uploaded", Toast.LENGTH_SHORT).show();
-        }
-      }
-
-      @Override
-      public void onProgressChanged(int id, long bytesCurrent, long bytesTotal) {
-        float percentDonef = ((float) bytesCurrent / (float) bytesTotal) * 100;
-        int percentDone = (int)percentDonef;
-        etBookName.setText("Percent: "+percentDone);
-        Log.d("YourActivity", "ID:" + id + " bytesCurrent: " + bytesCurrent
-            + " bytesTotal: " + bytesTotal + " " + percentDone + "%");
-      }
-
-      @Override
-      public void onError(int id, Exception ex) {
-        // Handle errors
-        Log.d("ImageUpload", ex.getMessage());
-      }
-
-    });
-
-    // If you prefer to poll for the data, instead of attaching a
-    // listener, check for the state and progress in the observer.
-    if (TransferState.COMPLETED == uploadObserver.getState()) {
-      // Handle a completed upload.
-    }
-
-    Log.d("YourActivity", "Bytes Transferrred: " + uploadObserver.getBytesTransferred());
-    Log.d("YourActivity", "Bytes Total: " + uploadObserver.getBytesTotal());
-  }
-
-
   private void initiateUpload(String book_name, String book_author, String book_desc,
-      String book_genre) {
-    //uploading a static url for image
-    base64String = "https://s3.amazonaws.com/crowdspring3-assets/marketing/landing-page/crowdspring-book-cover-design-lifetime-RedOne-1120.jpg";
+      String book_genre, String file_name) {
+
     Call<String> call = api
-        .uploadBook(book_name, book_author, book_desc, book_genre, base64String, user_name);
+        .uploadBook(book_name, book_author, book_desc, book_genre, file_name, user_name);
     call.enqueue(new Callback<String>() {
       @Override
       public void onResponse(Call<String> call, Response<String> response) {
@@ -267,8 +309,6 @@ public class UploadBookActivity extends AppCompatActivity {
     } else if (book_genre.isEmpty()) {
       showError("Empty Book Genre");
       return false;
-    } else if (base64String == null || base64String.isEmpty()) {
-      showError("Empty Image");
     }
     return true;
   }
@@ -282,7 +322,6 @@ public class UploadBookActivity extends AppCompatActivity {
   public void goBack(View view) {
     super.onBackPressed();
   }
-
 
 
   @SuppressLint("NewApi")

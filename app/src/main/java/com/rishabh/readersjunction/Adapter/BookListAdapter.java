@@ -27,14 +27,19 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
+import android.webkit.URLUtil;
 import android.widget.ImageView;
 import android.widget.TextView;
 import com.bumptech.glide.Glide;
 import com.rishabh.readersjunction.Activities.HomeActivity;
+import com.rishabh.readersjunction.Activities.SplashScreen;
 import com.rishabh.readersjunction.DataModels.BookDataModel;
 import com.rishabh.readersjunction.Fragments.BookCatalagFragment;
 import com.rishabh.readersjunction.R;
 import java.util.ArrayList;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class BookListAdapter extends RecyclerView.Adapter<BookListAdapter.ViewHolder> {
 
@@ -71,9 +76,29 @@ public class BookListAdapter extends RecyclerView.Adapter<BookListAdapter.ViewHo
     holder.status.setText(dataModel.getBookStatus());
     holder.author.setText(dataModel.getBookAuthor());
     holder.desc.setText(dataModel.getBookDescription());
-    Glide.with(context)
-        .load(dataModel.getBookCover())
-        .into(holder.imageView).onLoadFailed(context.getDrawable(R.drawable.biography_icon));
+    if (URLUtil.isValidUrl(dataModel.getBookCover())) {
+      Glide.with(context)
+          .load(dataModel.getBookCover())
+          .into(holder.imageView).onLoadFailed(context.getDrawable(R.drawable.no_image_found));
+    } else {
+      Call<String> call = SplashScreen.api.getImageFromS3(dataModel.getBookCover());
+      call.enqueue(new Callback<String>() {
+        @Override
+        public void onResponse(Call<String> call, Response<String> response) {
+          if (response.isSuccessful()) {
+            Glide.with(context)
+                .load(response.body())
+                .into(holder.imageView)
+                .onLoadFailed(context.getDrawable(R.drawable.no_image_found));
+          }
+        }
+
+        @Override
+        public void onFailure(Call<String> call, Throwable t) {
+          Glide.with(context).load(R.drawable.no_image_found).into(holder.imageView);
+        }
+      });
+    }
     holder.itemView.setOnClickListener(new OnClickListener() {
       @Override
       public void onClick(View view) {
@@ -103,8 +128,9 @@ public class BookListAdapter extends RecyclerView.Adapter<BookListAdapter.ViewHo
   }
 
 
-  private void loadFragment(android.support.v4.app.Fragment fragment) {
+  private void loadFragment(BookCatalagFragment fragment) {
     HomeActivity homeScreen = (HomeActivity) context;
+    fragment.setCreditsUpdated(homeScreen.getCreditsUpdated());
     FragmentTransaction transaction = homeScreen.getSupportFragmentManager().beginTransaction();
     transaction.replace(R.id.container, fragment);
     transaction.addToBackStack(null);

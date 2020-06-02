@@ -32,7 +32,7 @@ import retrofit2.converter.scalars.ScalarsConverterFactory;
 
 public class SplashScreen extends AppCompatActivity {
 
-  private static final String url = "http://ec2-18-223-190-95.us-east-2.compute.amazonaws.com:3000/"; //base url
+  private static final String url = "http://18.217.164.111/app/"; //base url
   public static API api = null; //single api for whole app
   public static CognitoUserPool userPool;
   public static CognitoUser user;
@@ -51,7 +51,6 @@ public class SplashScreen extends AppCompatActivity {
     userPool = new CognitoUserPool(this, userPoolId, clientId, clientSecret, regions);
     user = userPool.getCurrentUser();
     emailaddress = user.getUserId();
-
 
     final Gson gson = new GsonBuilder()
         .setLenient()

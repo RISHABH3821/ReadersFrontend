@@ -93,6 +93,7 @@ public class LoginActivity extends Activity {
       public void onResponse(Call<String> call, Response<String> response) {
         if(response.isSuccessful()){
           PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).edit().putString(USER_NAME, response.body()).apply();
+          PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).edit().putBoolean("signed", true).apply();
           startActivity(new Intent(LoginActivity.this, HomeActivity.class));
           LoginActivity.this.finish();
         }
@@ -150,13 +151,32 @@ public class LoginActivity extends Activity {
           useremail = user.getText().toString();
           password = pass.getText().toString();
           if(Patterns.EMAIL_ADDRESS.matcher(useremail).matches()) {
-            userPool.getUser(useremail).getSessionInBackground(authenticationHandler);
+            Call<String> call = api.getUserName(useremail);
+            call.enqueue(new Callback<String>() {
+              @Override
+              public void onResponse(Call<String> call, Response<String> response) {
+                if(response.isSuccessful()){
+                  PreferenceManager.getDefaultSharedPreferences(LoginActivity.this).edit().putString(USER_NAME, response.body()).apply();
+                  userPool.getUser(useremail).getSessionInBackground(authenticationHandler);
+                }else{
+                  Toast.makeText(LoginActivity.this, "Username does not exist.", Toast.LENGTH_SHORT).show();
+                  loginbtn.setEnabled(true);
+                }
+              }
+
+              @Override
+              public void onFailure(Call<String> call, Throwable t) {
+                Toast.makeText(LoginActivity.this, "Username does not exist.", Toast.LENGTH_SHORT).show();
+                loginbtn.setEnabled(true);
+              }
+            });
           }else{
             Call<String> call = api.getUserEmail(useremail);
             call.enqueue(new Callback<String>() {
               @Override
               public void onResponse(Call<String> call, Response<String> response) {
                 if(response.isSuccessful()){
+                  PreferenceManager.getDefaultSharedPreferences(LoginActivity.this).edit().putString(USER_NAME, useremail).apply();
                   userPool.getUser(response.body()).getSessionInBackground(authenticationHandler);
                 }else{
                   Toast.makeText(LoginActivity.this, "Username does not exist.", Toast.LENGTH_SHORT).show();

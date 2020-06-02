@@ -15,11 +15,13 @@ import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.RecyclerView.AdapterDataObserver;
 import android.support.v7.widget.RecyclerView.LayoutManager;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.FrameLayout;
 import android.widget.Toast;
 import com.rishabh.readersjunction.Activities.LoginActivity;
 import com.rishabh.readersjunction.Adapter.GenreAdapter;
@@ -42,6 +44,7 @@ public class GenreListFragment extends Fragment {
   private Context context;
   private ArrayList<GenreDataModel> dataModelList;
   private GenreAdapter genreAdapter;
+  private FrameLayout messageLayout;
 
   public GenreListFragment() {
     // Required empty public constructor
@@ -52,12 +55,24 @@ public class GenreListFragment extends Fragment {
       Bundle savedInstanceState) {
     // Inflate the layout for this fragment
     View view = inflater.inflate(R.layout.fragment_genre_list, container, false);
+    messageLayout = view.findViewById(R.id.imageLayout);
     context = getContext();
     dataModelList = new ArrayList<>();
     RecyclerView recyclerView = view.findViewById(R.id.recyclerView);
     LayoutManager layoutManager = new GridLayoutManager(context, 2);
     recyclerView.setLayoutManager(layoutManager);
     genreAdapter = new GenreAdapter(dataModelList, context);
+    genreAdapter.registerAdapterDataObserver(new AdapterDataObserver() {
+      @Override
+      public void onChanged() {
+        super.onChanged();
+        if(dataModelList.isEmpty()){
+          messageLayout.setVisibility(View.VISIBLE);
+        }else{
+          messageLayout.setVisibility(View.GONE);
+        }
+      }
+    });
     recyclerView.setAdapter(genreAdapter);
     getGenres();
     return view;

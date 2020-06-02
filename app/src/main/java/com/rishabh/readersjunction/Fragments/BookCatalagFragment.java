@@ -21,6 +21,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
+import android.webkit.URLUtil;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -28,6 +29,8 @@ import android.widget.RatingBar;
 import android.widget.TextView;
 import android.widget.Toast;
 import com.bumptech.glide.Glide;
+import com.rishabh.readersjunction.Activities.HomeActivity.CreditsUpdated;
+import com.rishabh.readersjunction.Activities.SplashScreen;
 import com.rishabh.readersjunction.R;
 import com.rishabh.readersjunction.Services.InternetService;
 import org.jetbrains.annotations.NotNull;
@@ -60,11 +63,17 @@ public class BookCatalagFragment extends Fragment {
   private Button ratingButton;
   private RatingBar overallRatingBar;
   private LinearLayout ratingLayout;
+  private CreditsUpdated creditsUpdated;
 
   public BookCatalagFragment() {
     // Required empty public constructor
   }
 
+
+  public void setCreditsUpdated(
+      CreditsUpdated creditsUpdated) {
+    this.creditsUpdated = creditsUpdated;
+  }
 
   @Override
   public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -84,7 +93,7 @@ public class BookCatalagFragment extends Fragment {
     String book_desc = bundle.getString(BOOK_DESC);
     String book_status = bundle.getString(BOOK_STATUS);
     String book_user_name = bundle.getString(BOOK_USER_NAME);
-    String book_cover = bundle.getString(BOOK_COVER);
+    final String book_cover = bundle.getString(BOOK_COVER);
     TextView bookName, bookCredit, bookExchangeCount, bookAuthor, bookDesc, bookStatus, bookUserName;
     bookUserName = view.findViewById(R.id.book_owner);
     bookUserName.setText("From " + book_user_name);
@@ -100,11 +109,32 @@ public class BookCatalagFragment extends Fragment {
     bookAuthor.setText(book_author);
     bookDesc.setText(book_desc);
     bookStatus.setText("Currently " + book_status);
-    ImageView bookCover = view.findViewById(R.id.book_cover);
+    final ImageView bookCover = view.findViewById(R.id.book_cover);
     ratingBar = view.findViewById(R.id.ratingBar);
     ratingButton = view.findViewById(R.id.rateButton);
     ratingLayout = view.findViewById(R.id.ratingLayout);
-    Glide.with(context).load(book_cover).into(bookCover);
+    if (URLUtil.isValidUrl(book_cover)) {
+      Glide.with(context)
+          .load(book_cover)
+          .into(bookCover).onLoadFailed(context.getDrawable(R.drawable.no_image_found));
+    } else {
+      Call<String> call = SplashScreen.api.getImageFromS3(book_cover);
+      call.enqueue(new Callback<String>() {
+        @Override
+        public void onResponse(Call<String> call, Response<String> response) {
+          if (response.isSuccessful()) {
+            Glide.with(context)
+                .load(response.body())
+                .into(bookCover).onLoadFailed(context.getDrawable(R.drawable.no_image_found));
+          }
+        }
+
+        @Override
+        public void onFailure(Call<String> call, Throwable t) {
+          Glide.with(context).load(R.drawable.no_image_found).into(bookCover);
+        }
+      });
+    }
     requestButton = view.findViewById(R.id.request_button);
     overallRatingBar = view.findViewById(R.id.overall_rating);
     ratingButton = view.findViewById(R.id.rateButton);
@@ -199,7 +229,7 @@ public class BookCatalagFragment extends Fragment {
         if (!new InternetService(context).haveNetworkConnection()) {
           showMessage("Not Connected to Internet");
         } else {
-          showMessage("Something went wrong, Please Try again later.");
+//          showMessage("Something went wrong, Please Try again later.");
           Log.d("Error", t.toString());
         }
       }
@@ -279,6 +309,7 @@ public class BookCatalagFragment extends Fragment {
         if (response.isSuccessful()) {
           Toast.makeText(context, "Request Sent", Toast.LENGTH_SHORT).show();
           requestButton.setEnabled(false);
+          creditsUpdated.onCreditsUpdated();
         } else {
           requestButton.setEnabled(true);
           Toast.makeText(context, response.body(), Toast.LENGTH_SHORT).show();

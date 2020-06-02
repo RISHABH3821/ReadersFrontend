@@ -15,11 +15,13 @@ import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.RecyclerView.AdapterDataObserver;
 import android.support.v7.widget.RecyclerView.LayoutManager;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.Toast;
 import com.rishabh.readersjunction.Adapter.TransactionAdapter;
@@ -38,6 +40,7 @@ public class TransactionFragment extends Fragment {
   private TransactionAdapter adapter;
   private String user_name;
   private ArrayList<TransactionDataModel> dataModels;
+  private FrameLayout frameLayout;
 
   public TransactionFragment() {
     // Required empty public constructor
@@ -48,6 +51,7 @@ public class TransactionFragment extends Fragment {
       Bundle savedInstanceState) {
     // Inflate the layout for this fragment
     View view = inflater.inflate(R.layout.fragment_transaction, container, false);
+    frameLayout = view.findViewById(R.id.imageLayout);
     recyclerView = view.findViewById(R.id.recyclerView);
     dataModels = new ArrayList<>();
     LayoutManager layoutManager = new LinearLayoutManager(getContext(), LinearLayout.VERTICAL,
@@ -56,6 +60,19 @@ public class TransactionFragment extends Fragment {
     user_name = PreferenceManager
         .getDefaultSharedPreferences(getContext()).getString(USER_NAME, "null");
     getAllTransactions();
+    adapter = new TransactionAdapter(dataModels, getContext());
+    recyclerView.setAdapter(adapter);
+    adapter.registerAdapterDataObserver(new AdapterDataObserver() {
+      @Override
+      public void onChanged() {
+        super.onChanged();
+        if(dataModels.isEmpty()){
+          frameLayout.setVisibility(View.VISIBLE);
+        }else{
+          frameLayout.setVisibility(View.GONE);
+        }
+      }
+    });
     return view;
   }
 
@@ -69,9 +86,8 @@ public class TransactionFragment extends Fragment {
         if (response.isSuccessful()) {
           if (response.body() != null) {
             dataModels.addAll(response.body());
+            adapter.notifyDataSetChanged();
           }
-          adapter = new TransactionAdapter(dataModels, getContext());
-          recyclerView.setAdapter(adapter);
 
         }
       }

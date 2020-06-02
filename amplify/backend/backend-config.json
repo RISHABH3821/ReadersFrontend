@@ -1,0 +1,15 @@
+{
+	"auth": {
+		"readersapp027d6387": {
+			"service": "Cognito",
+			"providerPlugin": "awscloudformation",
+			"dependsOn": []
+		}
+	},
+	"storage": {
+		"s3a0256631": {
+			"service": "S3",
+			"providerPlugin": "awscloudformation"
+		}
+	}
+}

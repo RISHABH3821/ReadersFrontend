@@ -21,12 +21,12 @@ import retrofit2.http.Query;
 public interface API {
 
   @FormUrlEncoded
-  @POST("/login/")
+  @POST("login/")
   Call<String> performLogin(@Field("user_name") String user_name,
       @Field("password") String password);
 
   @FormUrlEncoded
-  @POST("/signup/")
+  @POST("signup/")
   Call<String> performRegisteration(@Field("user_name") String user_name,
       @Field("full_name") String fullname,
       @Field("password") String password,
@@ -35,7 +35,7 @@ public interface API {
       @Field("address") String address);
 
   @FormUrlEncoded
-  @POST("/uploadBook/")
+  @POST("uploadBook/")
   Call<String> uploadBook(@Field("book_name") String book_name,
       @Field("book_author") String book_author,
       @Field("book_desc") String book_desc,
@@ -43,80 +43,84 @@ public interface API {
       @Field("book_cover") String book_cover,
       @Field("user_name") String user_name);
 
-  @GET("/GetBookByGenre/")
+  @GET("GetBookByGenre/")
   Call<List<BookDataModel>> getBooksByGenre(@Query("genre") String genre);
 
-  @GET("/GetBookByUserName/")
+  @GET("GetBookByUserName/")
   Call<List<BookDataModel>> getBooksByUser(@Query("user_name") String user_name);
 
-  @GET("/GetUserFullName/")
+  @GET("GetUserFullName/")
   Call<String> getFullName(@Query("user_name") String user_name);
 
-  @GET("/creditCount/")
+  @GET("creditCount/")
   Call<String> getCurrentCredit(@Query("user_name") String user_name);
 
   @FormUrlEncoded
-  @POST("/DeleteMyBook/")
+  @POST("DeleteMyBook/")
   Call<String> deleteBook(@Field("book_id") int book_id);
 
   //get transaction from transaction table if user_name is either buyer or seller.
-  @GET("/GetAllTransactions/")
+  @GET("GetAllTransactions/")
   Call<List<TransactionDataModel>> getAllTransactions(@Query("user_name") String user_name);
 
   //requested
   @FormUrlEncoded
-  @POST("/AcceptRequest/")
+  @POST("AcceptRequest/")
   Call<String> acceptRequest(@Field("transaction_id") int transaction_id);
 
   @FormUrlEncoded
-  @POST("/RejectRequest/")
+  @POST("RejectRequest/")
   Call<String> rejectRequest(@Field("transaction_id") int transaction_id);
 
   @FormUrlEncoded
-  @POST("/SendRequest/")
+  @POST("SendRequest/")
   Call<String> sendRequest(@Field("book_id") String book_id,
       @Field("buyer_name") String buyer_name);
 
   //buyer can call on any stage.
   @FormUrlEncoded
-  @POST("/CancelRequest/")
+  @POST("CancelRequest/")
   Call<String> cancelRequest(@Field("transaction_id") int transaction_id);
 
   //pending or
   @FormUrlEncoded
-  @POST("/DiscardTransaction/")
+  @POST("DiscardTransaction/")
   Call<String> discardTransaction(@Field("transaction_id") int transaction_id);
 
   @FormUrlEncoded
-  @POST("/FinalizeTransaction/")
+  @POST("FinalizeTransaction/")
   Call<String> completeTransaction(@Field("transaction_id") int transaction_id);
 
-  @GET("/GetBookNameByID/")
+  @GET("GetBookNameByID/")
   Call<String> getBookNameByID(@Query("book_id") int book_id);
 
-  @GET("/getGenre/")
+  @GET("getGenre/")
   Call<List<GenreDataModel>> getGenres();
 
-  @GET("/getRating/")
+  @GET("getRating/")
   Call<String> getRating(@Query("book_id") int book_id, @Query("user_id") int user_id);
 
-  @GET("/getTotalRating/")
+  @GET("getTotalRating/")
   Call<String> getTotalRating(@Query("book_id") int book_id);
 
   @FormUrlEncoded
-  @POST("/postRating/")
+  @POST("postRating/")
   Call<String> postRating(@Field("book_id") int book_id, @Field("user_id") int user_id,
       @Field("rating") Float rating);
 
 
-  @GET("/getUserId/")
+  @GET("getUserId/")
   Call<String > getUserId(@Query("user_name") String user_name);
 
 
-  @GET("/getusername/")
+  @GET("getusername/")
   Call<String > getUserName(@Query("user_email") String user_email);
 
-  @GET("/getuseremail/")
+  @GET("getuseremail/")
   Call<String > getUserEmail(@Query("user_name") String user_name);
+
+
+  @GET("getImagesfromS3/")
+  Call<String > getImageFromS3(@Query("image") String image_name);
 
 }

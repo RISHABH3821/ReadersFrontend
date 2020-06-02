@@ -1,0 +1,20 @@
+{
+    "android": {
+        "awscloudformation": {
+            "AuthRoleName": "amplify-readersapp-android-181254-authRole",
+            "UnauthRoleArn": "arn:aws:iam::493938357991:role/amplify-readersapp-android-181254-unauthRole",
+            "AuthRoleArn": "arn:aws:iam::493938357991:role/amplify-readersapp-android-181254-authRole",
+            "Region": "us-east-2",
+            "DeploymentBucketName": "amplify-readersapp-android-181254-deployment",
+            "UnauthRoleName": "amplify-readersapp-android-181254-unauthRole",
+            "StackName": "amplify-readersapp-android-181254",
+            "StackId": "arn:aws:cloudformation:us-east-2:493938357991:stack/amplify-readersapp-android-181254/cd815ef0-8496-11ea-83b0-064e0383f37e",
+            "AmplifyAppId": "d3lqeyhb6bdlgg"
+        },
+        "categories": {
+            "auth": {
+                "readersapp027d6387": {}
+            }
+        }
+    }
+}

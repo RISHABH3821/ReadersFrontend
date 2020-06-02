@@ -84,6 +84,7 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
         @Override
         public void onClick(View view) {
           //accept request of someone.
+          acceptRequest(dataModel.getTransId(), listPosition);
 
         }
       });
@@ -123,6 +124,12 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
   }
 
 
+  private void updateCreditsInHomeScreen(){
+    HomeActivity homeScreen = (HomeActivity) context;
+    homeScreen.getCreditsUpdated().onCreditsUpdated();
+  }
+
+
   private void getBookNameById(int book_id, final TextView textView) {//getting book name from it's id.
     Call<String> call = api.getBookNameByID(book_id);
     call.enqueue(new Callback<String>() {
@@ -157,13 +164,16 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
         if (response.isSuccessful()) {
           Toast.makeText(context, "Done", Toast.LENGTH_SHORT).show();
           cancelTransaction(trans_id, index);
+          updateCreditsInHomeScreen();
         } else {
+          updateCreditsInHomeScreen();
           showError("Failed");
         }
       }
 
       @Override
       public void onFailure(Call<String> call, Throwable t) {
+        updateCreditsInHomeScreen();
         if (!new InternetService(context).haveNetworkConnection()) {
           showError("Not Connected to Internet");
         } else {
@@ -182,6 +192,7 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
     call.enqueue(new Callback<String>() {
       @Override
       public void onResponse(Call<String> call, Response<String> response) {
+        updateCreditsInHomeScreen();
         if (response.isSuccessful()) {
           Toast.makeText(context, "Done", Toast.LENGTH_SHORT).show();
           dataSet.remove(index);
@@ -193,6 +204,7 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
 
       @Override
       public void onFailure(Call<String> call, Throwable t) {
+        updateCreditsInHomeScreen();
         if (!new InternetService(context).haveNetworkConnection()) {
           showError("Not Connected to Internet");
         } else {
@@ -215,6 +227,7 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
     call.enqueue(new Callback<String>() {
       @Override
       public void onResponse(Call<String> call, Response<String> response) {
+        updateCreditsInHomeScreen();
         if (response.isSuccessful()) {
           Toast.makeText(context, "Done", Toast.LENGTH_SHORT).show();
           dataSet.get(index).setStatusTransaction("pending");
@@ -226,6 +239,7 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
 
       @Override
       public void onFailure(Call<String> call, Throwable t) {
+        updateCreditsInHomeScreen();
         if (!new InternetService(context).haveNetworkConnection()) {
           showError("Not Connected to Internet");
         } else {

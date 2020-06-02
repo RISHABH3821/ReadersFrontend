@@ -10,8 +10,11 @@ package com.rishabh.readersjunction.Activities;
 import static android.support.v4.app.FragmentManager.POP_BACK_STACK_INCLUSIVE;
 import static com.rishabh.readersjunction.Activities.LoginActivity.USER_NAME;
 import static com.rishabh.readersjunction.Activities.SplashScreen.api;
+import static com.rishabh.readersjunction.Activities.SplashScreen.user;
 
+import android.annotation.SuppressLint;
 import android.os.Bundle;
+import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
@@ -22,11 +25,18 @@ import android.util.Log;
 import android.view.MenuItem;
 import android.widget.TextView;
 import android.widget.Toast;
+import com.amazonaws.mobile.client.AWSMobileClient;
+import com.amazonaws.services.s3.AmazonS3Client;
+import com.google.gson.Gson;
+import com.rishabh.readersjunction.Fragments.CustomProgressDialog;
+import com.rishabh.readersjunction.Fragments.CustomProgressDialog.ProgressChangeListener;
 import com.rishabh.readersjunction.Fragments.GenreListFragment;
 import com.rishabh.readersjunction.Fragments.ProfileFragment;
 import com.rishabh.readersjunction.Fragments.TransactionFragment;
 import com.rishabh.readersjunction.R;
 import com.rishabh.readersjunction.Services.InternetService;
+import com.rishabh.readersjunction.Utils.AWSS3;
+import java.net.URL;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -39,6 +49,10 @@ public class HomeActivity extends AppCompatActivity {
   private String user_name;
   private TextView creditScore;
   public static final String USER_ID = "user_id";
+
+  public interface CreditsUpdated{
+    void onCreditsUpdated();
+  }
 
   private BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener
       = new BottomNavigationView.OnNavigationItemSelectedListener() {
@@ -69,6 +83,19 @@ public class HomeActivity extends AppCompatActivity {
       return false;
     }
   };
+
+
+  private CreditsUpdated creditsUpdated = new CreditsUpdated() {
+    @Override
+    public void onCreditsUpdated() {
+      getCredit(user_name);
+    }
+  };
+
+
+  public CreditsUpdated getCreditsUpdated() {
+    return creditsUpdated;
+  }
 
 
   @Override
@@ -117,6 +144,7 @@ public class HomeActivity extends AppCompatActivity {
     call.enqueue(new Callback<String>() {
       @Override
       public void onResponse(Call<String> call, Response<String> response) {
+        Log.d("HomeActivity", "Request "+new Gson().toJson(call.request()));
         if (response.isSuccessful()) {
           creditScore.setText(response.body());
         } else {
